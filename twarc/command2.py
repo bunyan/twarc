@@ -1407,6 +1407,12 @@ def timeline(
     help="Maximum number of tweets to return per-timeline",
 )
 @click.option(
+    "--max-results",
+    default=100,
+    type=int,
+    help="Maximum number of tweets to return per API request (between 5 and 100)",
+)
+@click.option(
     "--sort-order",
     type=click.Choice(["recency", "relevancy"]),
     help='Filter tweets based on their date ("recency") (default) or based on their relevance as indicated by Twitter ("relevancy")',
@@ -1424,6 +1430,7 @@ def timelines(
     outfile,
     limit,
     timeline_limit,
+    max_results,
     use_search,
     sort_order,
     hide_progress,
@@ -1438,6 +1445,9 @@ def timelines(
 
         - A file containing one user id per line (either quoted or unquoted)
         - A JSONL file containing tweets collected in the Twitter API V2 format
+
+    The max-results parameter controls how many tweets are returned per API request
+    and must be between 5 and 100 (default: 100).
 
     """
     total_count = 0
@@ -1508,6 +1518,7 @@ def timelines(
                     use_search=use_search,
                     sort_order=sort_order,
                     user_id=user,
+                    max_results=max_results,
                     **kwargs,
                 )
 
