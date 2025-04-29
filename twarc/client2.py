@@ -44,6 +44,7 @@ class Twarc2:
         bearer_token=None,
         connection_errors=0,
         metadata=True,
+        safe_run=False,
     ):
         """
         Instantiate a Twarc2 instance to talk to the Twitter V2+ API.
@@ -78,6 +79,7 @@ class Twarc2:
         self.api_version = "2"
         self.connection_errors = connection_errors
         self.metadata = metadata
+        self.safe_run = safe_run
         self.bearer_token = None
 
         if bearer_token:
@@ -1581,6 +1583,46 @@ class Twarc2:
             else:
                 log.info(f"Retrieved an empty page of results for quotes of {tweet_id}")
 
+    def _confirm_request(self, method, url, params=None, json_data=None):
+        """
+        Ask for user confirmation before making an API request.
+
+        Args:
+            method (str): HTTP method (GET or POST).
+            url (str): URL to make the request to.
+            params (dict, optional): URL parameters for GET requests.
+            json_data (dict, optional): JSON data for POST requests.
+
+        Returns:
+            bool: True if the user confirms, False otherwise.
+        """
+        if not self.safe_run:
+            return True
+
+        print("\n=== Safe Run Mode: API Request Confirmation ===")
+        print(f"Method: {method}")
+        print(f"URL: {url}")
+        
+        if params:
+            print("\nParameters:")
+            for key, value in params.items():
+                print(f"  {key}: {value}")
+        
+        if json_data:
+            print("\nJSON Data:")
+            print(json.dumps(json_data, indent=2))
+        
+        while True:
+            response = input("\nProceed with this request? (yes/no): ").lower().strip()
+            if response in ["yes", "y"]:
+                return True
+            elif response in ["no", "n"]:
+                print("Request cancelled. Exiting.")
+                import sys
+                sys.exit(0)
+            else:
+                print("Please enter 'yes' or 'no'.")
+
     @catch_request_exceptions
     @rate_limit
     def get(self, *args, **kwargs):
@@ -1596,6 +1638,15 @@ class Twarc2:
         """
         if not self.client:
             self.connect()
+        
+        url = args[0] if args else ""
+        params = kwargs.get("params", {})
+        
+        if self.safe_run:
+            confirmed = self._confirm_request("GET", url, params=params)
+            if not confirmed:
+                return None
+                
         log.info("getting %s %s", args, kwargs)
         r = self.last_response = self.client.get(*args, timeout=(3.05, 31), **kwargs)
         return r
@@ -1678,6 +1729,12 @@ class Twarc2:
         """
         if not self.client:
             self.connect()
+            
+        if self.safe_run:
+            confirmed = self._confirm_request("POST", url, json_data=json_data)
+            if not confirmed:
+                return None
+                
         return self.client.post(url, json=json_data)
 
     def connect(self):

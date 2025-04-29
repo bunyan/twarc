@@ -100,6 +100,12 @@ log = logging.getLogger("twarc")
     show_default=True,
     help="Include/don't include metadata about when and how data was collected.",
 )
+@click.option(
+    "--safe-run/--no-safe-run",
+    default=False,
+    show_default=True,
+    help="Ask for confirmation before making API requests.",
+)
 @configuration_option(
     cmd_name="twarc", config_file_name="config", provider=config_provider
 )
@@ -115,6 +121,7 @@ def twarc2(
     metadata,
     app_auth,
     verbose,
+    safe_run,
 ):
     """
     Collect data from the Twitter V2 API.
@@ -134,6 +141,7 @@ def twarc2(
                 consumer_secret=consumer_secret,
                 bearer_token=bearer_token,
                 metadata=metadata,
+                safe_run=safe_run,
             )
         # Check everything is present for user auth.
         elif consumer_key and consumer_secret and access_token and access_token_secret:
@@ -143,6 +151,7 @@ def twarc2(
                 access_token=access_token,
                 access_token_secret=access_token_secret,
                 metadata=metadata,
+                safe_run=safe_run,
             )
         else:
             click.echo(
